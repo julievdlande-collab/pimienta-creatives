@@ -12,11 +12,11 @@ export default function Hero() {
 
         {/* Headline */}
         <h1
-          className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] max-w-4xl mx-auto animate-fade-in-up"
-          style={{ animationDelay: "0.1s", opacity: 0 }}
+          className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] max-w-4xl mx-auto animate-fade-in-up"
+          style={{ animationDelay: "0.1s", opacity: 0, letterSpacing: "-0.025em" }}
         >
-          Product photo in,{" "}
-          <span className="gradient-text">scroll-stopping ads</span> out.
+          Your product. Three ads.{" "}
+          <span className="text-accent">Seconds.</span>
         </h1>
 
         {/* Subheadline */}
@@ -34,10 +34,10 @@ export default function Hero() {
           style={{ animationDelay: "0.3s", opacity: 0 }}
         >
           <a
-            href="#pricing"
-            className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-white bg-accent rounded-full hover:bg-accent/90 transition-colors shadow-lg shadow-accent/25"
+            href="/create"
+            className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-white bg-accent rounded-full hover:bg-accent-hover transition-colors shadow-lg shadow-accent/25"
           >
-            Start free — no card needed
+            Start creating for free
           </a>
           <a
             href="#how-it-works"
@@ -97,9 +97,9 @@ export default function Hero() {
                   {/* 3 generated ads */}
                   <div className="flex-1 grid grid-cols-3 gap-4">
                     {[
-                      { bg: "from-violet-100 to-pink-100", label: "Lifestyle", icon: "🌿" },
-                      { bg: "from-amber-100 to-orange-100", label: "Bold Sale", icon: "🔥" },
-                      { bg: "from-sky-100 to-indigo-100", label: "Minimal", icon: "✨" },
+                      { bg: "from-red-50 to-rose-100", label: "Benefit", icon: "🌿" },
+                      { bg: "from-amber-50 to-orange-100", label: "Social Proof", icon: "🔥" },
+                      { bg: "from-teal-50 to-emerald-100", label: "Scroll-Stopper", icon: "✨" },
                     ].map((ad) => (
                       <div key={ad.label} className="group">
                         <div

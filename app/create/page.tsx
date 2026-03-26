@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
 
@@ -29,12 +29,17 @@ export default function CreatePage() {
   // Form state
   const [productName, setProductName] = useState("");
   const [productBenefit, setProductBenefit] = useState("");
-  const [brandColor, setBrandColor] = useState("#7c3aed");
+  const [brandColor, setBrandColor] = useState("#AE1B1F");
   const [tone, setTone] = useState("Confident and direct");
   const [style, setStyle] = useState<CreativeStyle>("clean");
   const [format, setFormat] = useState<AdFormat>("1:1");
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+
+  // Style-specific options
+  const [ugcSetting, setUgcSetting] = useState("");
+  const [cleanBackground, setCleanBackground] = useState("");
+  const [influencerSetting, setInfluencerSetting] = useState("");
 
   // Generation state
   const [loading, setLoading] = useState(false);
@@ -42,19 +47,39 @@ export default function CreatePage() {
   const [results, setResults] = useState<(string | null)[]>([]);
   const [imageUrls, setImageUrls] = useState<({ id: string; url: string } | null)[]>([]);
   const [error, setError] = useState("");
+  const [canvaLoading, setCanvaLoading] = useState<number | null>(null);
+
+  // Check URL params for Canva connection status
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("canva_connected") === "true") {
+      window.history.replaceState({}, "", "/create");
+    }
+    const canvaError = params.get("canva_error");
+    if (canvaError) {
+      setError(`Canva connection failed: ${canvaError}`);
+      window.history.replaceState({}, "", "/create");
+    }
+  }, []);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image too large. Maximum 10MB.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
       setProductImagePreview(dataUrl);
-      // Strip the data:image/...;base64, prefix for the API
       const base64 = dataUrl.split(",")[1];
       setProductImage(base64);
     };
+    reader.onerror = () => setError("Failed to read image. Try again.");
     reader.readAsDataURL(file);
   }, []);
 
@@ -82,6 +107,10 @@ export default function CreatePage() {
           style,
           format,
           productImageBase64: productImage,
+          // Style-specific options
+          ...(style === "ugc" && ugcSetting ? { ugcSetting } : {}),
+          ...(style === "clean" && cleanBackground ? { cleanBackground } : {}),
+          ...(style === "influencer" && influencerSetting ? { influencerSetting } : {}),
         }),
       });
 
@@ -109,24 +138,11 @@ export default function CreatePage() {
     link.click();
   };
 
-  const [canvaConnected, setCanvaConnected] = useState(false);
-
-  // Check URL params for Canva connection status
-  useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("canva_connected") === "true") {
-        setCanvaConnected(true);
-        // Clean up URL
-        window.history.replaceState({}, "", "/create");
-      }
-    }
-  });
-
   const handleEditInCanva = async (index: number) => {
     const entry = imageUrls[index];
     if (!entry) return;
 
+    setCanvaLoading(index);
     try {
       const res = await fetch("/api/canva/import", {
         method: "POST",
@@ -139,7 +155,6 @@ export default function CreatePage() {
 
       const data = await res.json();
 
-      // User needs to connect Canva first
       if (data.method === "connect") {
         window.location.href = data.authUrl;
         return;
@@ -149,8 +164,9 @@ export default function CreatePage() {
         window.open(data.editUrl, "_blank");
       }
     } catch {
-      // Fallback: open Canva with image URL
       window.open(`https://www.canva.com/design/new`, "_blank");
+    } finally {
+      setCanvaLoading(null);
     }
   };
 
@@ -198,13 +214,14 @@ export default function CreatePage() {
               {/* Product name */}
               <div>
                 <label className="block text-sm font-semibold mb-2">
-                  Product name <span className="text-red-400">*</span>
+                  Product name <span className="text-accent">*</span>
                 </label>
                 <input
                   type="text"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="e.g. Hydra Glow Serum"
+                  maxLength={100}
                   className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
                 />
               </div>
@@ -219,6 +236,7 @@ export default function CreatePage() {
                   value={productBenefit}
                   onChange={(e) => setProductBenefit(e.target.value)}
                   placeholder="e.g. 24h hydration with vitamin C"
+                  maxLength={200}
                   className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
                 />
               </div>
@@ -274,6 +292,67 @@ export default function CreatePage() {
                 </div>
               </div>
 
+              {/* Style-specific options */}
+              {style === "ugc" && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Setting <span className="text-muted text-xs font-normal">(optional)</span>
+                  </label>
+                  <select
+                    value={ugcSetting}
+                    onChange={(e) => setUgcSetting(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  >
+                    <option value="">Auto (kitchen, desk, outdoor)</option>
+                    <option value="kitchen counter with morning light">Kitchen</option>
+                    <option value="desk with laptop and coffee">Desk / Office</option>
+                    <option value="bathroom shelf with mirror">Bathroom</option>
+                    <option value="outdoor cafe table in sunlight">Outdoor / Cafe</option>
+                    <option value="cozy couch with blanket">Living room</option>
+                  </select>
+                </div>
+              )}
+
+              {style === "clean" && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Background <span className="text-muted text-xs font-normal">(optional)</span>
+                  </label>
+                  <select
+                    value={cleanBackground}
+                    onChange={(e) => setCleanBackground(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  >
+                    <option value="">Auto (soft gradient or neutral)</option>
+                    <option value="pure white seamless background">White</option>
+                    <option value="light gray gradient">Light gray</option>
+                    <option value="warm beige gradient">Warm beige</option>
+                    <option value="soft pastel gradient matching brand color">Brand color gradient</option>
+                    <option value="dark charcoal gradient">Dark / Charcoal</option>
+                  </select>
+                </div>
+              )}
+
+              {style === "influencer" && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Setting <span className="text-muted text-xs font-normal">(optional)</span>
+                  </label>
+                  <select
+                    value={influencerSetting}
+                    onChange={(e) => setInfluencerSetting(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  >
+                    <option value="">Auto (apartment or urban outdoor)</option>
+                    <option value="modern bright apartment living room">Modern apartment</option>
+                    <option value="trendy cafe interior">Cafe</option>
+                    <option value="urban street with soft background blur">Urban street</option>
+                    <option value="gym or fitness studio">Gym / Fitness</option>
+                    <option value="outdoor park with natural light">Park / Nature</option>
+                  </select>
+                </div>
+              )}
+
               {/* Ad format */}
               <div>
                 <label className="block text-sm font-semibold mb-2">Ad format</label>
@@ -299,7 +378,7 @@ export default function CreatePage() {
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full py-4 px-6 rounded-xl text-base font-semibold text-white bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-accent/25"
+                className="w-full py-4 px-6 rounded-xl text-base font-semibold text-white bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-accent/25"
               >
                 {loading ? "Generating..." : "Generate 3 variants"}
               </button>
@@ -344,15 +423,16 @@ export default function CreatePage() {
                         </div>
                         <div className="absolute top-3 left-3">
                           <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-xs font-semibold shadow-sm">
-                            {["Benefit", "Social Proof", "Urgency"][i]}
+                            {["Benefit", "Social Proof", "Scroll-Stopper"][i]}
                           </span>
                         </div>
                         <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleEditInCanva(i)}
-                            className="px-4 py-2 rounded-lg bg-[#7d2ae8]/90 backdrop-blur-sm text-xs font-semibold text-white shadow-sm hover:bg-[#7d2ae8] transition-colors"
+                            disabled={canvaLoading === i}
+                            className="px-4 py-2 rounded-lg bg-accent/90 backdrop-blur-sm text-xs font-semibold text-white shadow-sm hover:bg-accent transition-colors disabled:opacity-50"
                           >
-                            Edit in Canva
+                            {canvaLoading === i ? "Opening..." : "Edit in Canva"}
                           </button>
                           <button
                             onClick={() => handleDownload(img, i)}

@@ -20,16 +20,10 @@ export default function Nav() {
             Log in
           </a>
           <a
-            href="#pricing"
-            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-accent rounded-full hover:bg-accent/90 transition-colors"
-          >
-            Get started free
-          </a>
-          <a
             href="/create"
-            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-foreground rounded-full hover:bg-foreground/90 transition-colors"
+            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-accent rounded-full hover:bg-accent-hover transition-colors"
           >
-            Create
+            Start creating
           </a>
         </div>
       </div>

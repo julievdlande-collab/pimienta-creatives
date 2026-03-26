@@ -8,6 +8,7 @@ const STORE_DIR = process.env.NODE_ENV === "production"
   : join(process.cwd(), ".tmp-images");
 
 const TTL_MS = 60 * 60 * 1000; // 1 hour
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function ensureDir() {
   if (!existsSync(STORE_DIR)) {
@@ -39,6 +40,7 @@ class ImageStore {
   }
 
   get(id: string): string | undefined {
+    if (!UUID_RE.test(id)) return undefined;
     const filePath = join(STORE_DIR, `${id}.b64`);
     if (!existsSync(filePath)) return undefined;
 

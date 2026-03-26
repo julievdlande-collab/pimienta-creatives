@@ -1,42 +1,58 @@
 @import "tailwindcss";
 
 :root {
+  /* Primary - Pimienta Red */
   --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --accent: #7c3aed;
-  --accent-light: #ede9fe;
+  --foreground: #0A0A0A;
+  --text-secondary: #3A3A3A;
+  --muted: #6B7280;
+  --accent: #AE1B1F;
+  --accent-hover: #8E1519;
+  --accent-light: #FEE2E2;
+  /* Secondary - Teal */
+  --teal: #3E9087;
+  --teal-hover: #2D7A72;
+  --teal-light: #D1FAE5;
+  /* Surfaces */
   --card: #ffffff;
-  --card-border: #e2e8f0;
-  --section-alt: #f8fafc;
+  --card-border: #E5E7EB;
+  --section-alt: #F9FAFB;
+  --section-cream: #EFF0EC;
   --success: #10b981;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-text-secondary: var(--text-secondary);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-light: var(--accent-light);
+  --color-teal: var(--teal);
+  --color-teal-hover: var(--teal-hover);
+  --color-teal-light: var(--teal-light);
   --color-card: var(--card);
   --color-card-border: var(--card-border);
   --color-section-alt: var(--section-alt);
+  --color-section-cream: var(--section-cream);
   --color-success: var(--success);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #7c3aed, #2563eb);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), 'Sora', system-ui, sans-serif;
+}
+
+.text-accent-gradient {
+  color: var(--accent);
 }
 
 @keyframes fade-in-up {

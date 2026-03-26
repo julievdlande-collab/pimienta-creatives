@@ -117,7 +117,7 @@ export default function Pricing() {
               <button
                 className={`w-full py-3 px-4 rounded-xl text-sm font-semibold transition-colors ${
                   plan.popular
-                    ? "bg-accent text-white hover:bg-accent/90"
+                    ? "bg-accent text-white hover:bg-accent-hover"
                     : "bg-section-alt text-foreground hover:bg-card-border"
                 }`}
               >

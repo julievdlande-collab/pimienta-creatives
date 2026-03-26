@@ -32,7 +32,7 @@ export default function HowItWorks() {
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
             From product photo to ad creative in{" "}
-            <span className="gradient-text">4 steps</span>
+            <span className="text-accent">4 steps</span>
           </h2>
           <p className="text-muted text-lg mt-4 max-w-xl mx-auto">
             No design skills. No agency. No complex tools.
