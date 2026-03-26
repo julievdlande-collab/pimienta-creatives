@@ -109,6 +109,20 @@ export default function CreatePage() {
     link.click();
   };
 
+  const [canvaConnected, setCanvaConnected] = useState(false);
+
+  // Check URL params for Canva connection status
+  useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("canva_connected") === "true") {
+        setCanvaConnected(true);
+        // Clean up URL
+        window.history.replaceState({}, "", "/create");
+      }
+    }
+  });
+
   const handleEditInCanva = async (index: number) => {
     const entry = imageUrls[index];
     if (!entry) return;
@@ -124,6 +138,12 @@ export default function CreatePage() {
       });
 
       const data = await res.json();
+
+      // User needs to connect Canva first
+      if (data.method === "connect") {
+        window.location.href = data.authUrl;
+        return;
+      }
 
       if (data.editUrl) {
         window.open(data.editUrl, "_blank");

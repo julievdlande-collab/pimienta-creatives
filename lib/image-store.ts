@@ -1,46 +1,54 @@
-// Temporary in-memory image store
-// Replace with Supabase Storage for production
-const MAX_IMAGES = 100;
+import { writeFileSync, readFileSync, existsSync, unlinkSync, readdirSync, statSync, mkdirSync } from "fs";
+import { join } from "path";
+
+// File-based image store — works on Vercel serverless (/tmp)
+// and local dev (local .tmp-images directory)
+const STORE_DIR = process.env.NODE_ENV === "production"
+  ? "/tmp/pimienta-images"
+  : join(process.cwd(), ".tmp-images");
+
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
-interface StoredImage {
-  data: string; // base64
-  createdAt: number;
+function ensureDir() {
+  if (!existsSync(STORE_DIR)) {
+    mkdirSync(STORE_DIR, { recursive: true });
+  }
+}
+
+function cleanup() {
+  ensureDir();
+  const now = Date.now();
+  try {
+    for (const file of readdirSync(STORE_DIR)) {
+      const filePath = join(STORE_DIR, file);
+      const stat = statSync(filePath);
+      if (now - stat.mtimeMs > TTL_MS) {
+        unlinkSync(filePath);
+      }
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
 }
 
 class ImageStore {
-  private store = new Map<string, StoredImage>();
-
   set(id: string, base64: string): void {
-    // Evict expired entries
-    this.cleanup();
-
-    // Evict oldest if at capacity
-    if (this.store.size >= MAX_IMAGES) {
-      const oldest = this.store.keys().next().value;
-      if (oldest) this.store.delete(oldest);
-    }
-
-    this.store.set(id, { data: base64, createdAt: Date.now() });
+    ensureDir();
+    cleanup();
+    writeFileSync(join(STORE_DIR, `${id}.b64`), base64);
   }
 
   get(id: string): string | undefined {
-    const entry = this.store.get(id);
-    if (!entry) return undefined;
-    if (Date.now() - entry.createdAt > TTL_MS) {
-      this.store.delete(id);
+    const filePath = join(STORE_DIR, `${id}.b64`);
+    if (!existsSync(filePath)) return undefined;
+
+    const stat = statSync(filePath);
+    if (Date.now() - stat.mtimeMs > TTL_MS) {
+      unlinkSync(filePath);
       return undefined;
     }
-    return entry.data;
-  }
 
-  private cleanup(): void {
-    const now = Date.now();
-    for (const [id, entry] of this.store) {
-      if (now - entry.createdAt > TTL_MS) {
-        this.store.delete(id);
-      }
-    }
+    return readFileSync(filePath, "utf-8");
   }
 }
 
