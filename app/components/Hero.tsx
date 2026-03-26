@@ -15,8 +15,8 @@ export default function Hero() {
           className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] max-w-4xl mx-auto animate-fade-in-up"
           style={{ animationDelay: "0.1s", opacity: 0, letterSpacing: "-0.025em" }}
         >
-          Your product. Three ads.{" "}
-          <span className="text-accent">Seconds.</span>
+          One photo. Three ads{" "}
+          <span className="text-accent">that convert.</span>
         </h1>
 
         {/* Subheadline */}

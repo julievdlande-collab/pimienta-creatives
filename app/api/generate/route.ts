@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { buildPrompts, FORMAT_SPECS, type GenerateInput, type AdFormat } from "@/lib/prompts";
 import { imageStore } from "@/lib/image-store";
+import { deductCredit } from "@/lib/credits";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -78,13 +80,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "API key not configured" }, { status: 500 });
   }
 
+  // Auth + credit check
+  const accessToken = request.cookies.get("sb-access-token")?.value;
+  if (!accessToken) {
+    return NextResponse.json({ error: "Please sign in to generate creatives.", needsAuth: true }, { status: 401 });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data: { user } } = await supabase.auth.getUser(accessToken);
+  if (!user) {
+    return NextResponse.json({ error: "Session expired. Please sign in again.", needsAuth: true }, { status: 401 });
+  }
+
+  // Deduct 1 credit (atomic — checks balance > 0)
+  const credited = await deductCredit(user.id);
+  if (!credited) {
+    return NextResponse.json({ error: "No credits remaining. Buy more to continue.", needsCredits: true }, { status: 402 });
+  }
+
   try {
     const body = await request.json();
     const {
       productName,
       productBenefit,
       productContext,
-      brandColor = "#7c3aed",
+      brandColor = "#AE1B1F",
       tone = "Confident and direct",
       style = "clean",
       format = "1:1",

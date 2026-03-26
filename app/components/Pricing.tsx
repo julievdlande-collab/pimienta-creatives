@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 const plans = [
   {
     name: "Starter",
@@ -8,49 +12,102 @@ const plans = [
     features: [
       "3 variants per generation",
       "All styles & formats",
-      "With watermark",
       "Standard resolution",
     ],
     cta: "Start free",
+    packId: null,
     popular: false,
   },
   {
     name: "Creator",
-    price: "$19",
+    price: "\u20AC19",
     period: "25 credits",
     description: "Most popular",
     credits: "25 generations",
     features: [
       "3 variants per generation",
       "All styles & formats",
-      "No watermark",
       "Full resolution PNG",
       "Brand presets",
     ],
     cta: "Buy credits",
+    packId: "creator",
     popular: true,
   },
   {
     name: "Growth",
-    price: "$49",
+    price: "\u20AC49",
     period: "100 credits",
     description: "Best value",
     credits: "100 generations",
     features: [
       "3 variants per generation",
       "All styles & formats",
-      "No watermark",
       "Full resolution PNG",
       "Brand presets",
       "Priority generation",
       "Bulk download",
     ],
     cta: "Buy credits",
+    packId: "growth",
     popular: false,
   },
 ];
 
 export default function Pricing() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountMsg, setDiscountMsg] = useState("");
+  const [discountError, setDiscountError] = useState("");
+
+  const handleBuy = async (packId: string) => {
+    setLoading(packId);
+    try {
+      const res = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId }),
+      });
+      const data = await res.json();
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else if (res.status === 401) {
+        window.location.href = "/login";
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (!discountCode.trim()) return;
+    setDiscountMsg("");
+    setDiscountError("");
+
+    try {
+      const res = await fetch("/api/discount/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: discountCode }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setDiscountMsg(data.message);
+        setDiscountCode("");
+      } else if (res.status === 401) {
+        window.location.href = "/login";
+      } else {
+        setDiscountError(data.error);
+      }
+    } catch {
+      setDiscountError("Something went wrong.");
+    }
+  };
+
   return (
     <section id="pricing" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
@@ -114,17 +171,54 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <button
-                className={`w-full py-3 px-4 rounded-xl text-sm font-semibold transition-colors ${
-                  plan.popular
-                    ? "bg-accent text-white hover:bg-accent-hover"
-                    : "bg-section-alt text-foreground hover:bg-card-border"
-                }`}
-              >
-                {plan.cta}
-              </button>
+              {plan.packId ? (
+                <button
+                  onClick={() => handleBuy(plan.packId!)}
+                  disabled={loading === plan.packId}
+                  className={`w-full py-3 px-4 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+                    plan.popular
+                      ? "bg-accent text-white hover:bg-accent-hover"
+                      : "bg-section-alt text-foreground hover:bg-card-border"
+                  }`}
+                >
+                  {loading === plan.packId ? "Redirecting..." : plan.cta}
+                </button>
+              ) : (
+                <a
+                  href="/create"
+                  className="block w-full py-3 px-4 rounded-xl text-sm font-semibold text-center bg-section-alt text-foreground hover:bg-card-border transition-colors"
+                >
+                  {plan.cta}
+                </a>
+              )}
             </div>
           ))}
+        </div>
+
+        {/* Discount code */}
+        <div className="max-w-sm mx-auto mt-12 text-center">
+          <p className="text-sm text-muted mb-3">Have a discount code?</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              placeholder="Enter code"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-card-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+            />
+            <button
+              onClick={handleRedeem}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-foreground text-white hover:bg-foreground/90 transition-colors"
+            >
+              Redeem
+            </button>
+          </div>
+          {discountMsg && (
+            <p className="text-sm text-teal font-medium mt-2">{discountMsg}</p>
+          )}
+          {discountError && (
+            <p className="text-sm text-red-500 mt-2">{discountError}</p>
+          )}
         </div>
       </div>
     </section>
