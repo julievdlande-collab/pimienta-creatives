@@ -68,7 +68,7 @@ export default function CreatePage() {
     setError("");
     setResults([]);
     setImageUrls([]);
-    setProgress("Generating 3 ad variants with Nano Banana Pro...");
+    setProgress("Generating 3 ad variants...");
 
     try {
       const res = await fetch("/api/generate", {
