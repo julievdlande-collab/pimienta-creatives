@@ -25,6 +25,12 @@ export default function Nav() {
           >
             Get started free
           </a>
+          <a
+            href="/create"
+            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-foreground rounded-full hover:bg-foreground/90 transition-colors"
+          >
+            Create
+          </a>
         </div>
       </div>
     </nav>
