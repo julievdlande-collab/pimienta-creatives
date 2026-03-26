@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { randomUUID } from "crypto";
 import { buildPrompts, FORMAT_SPECS, type GenerateInput, type AdFormat } from "@/lib/prompts";
+import { imageStore } from "@/lib/image-store";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -147,8 +149,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Store images and generate public URLs
+    const origin = request.nextUrl.origin;
+    const imageEntries = images.map((img) => {
+      if (!img) return null;
+      const id = randomUUID();
+      imageStore.set(id, img);
+      return { id, url: `${origin}/api/image/${id}` };
+    });
+
     return NextResponse.json({
-      images, // base64 strings (or null for failed ones)
+      images, // base64 strings (for inline preview)
+      imageUrls: imageEntries, // public URLs (for Canva import, sharing)
       format,
       style,
       angles: ["benefit", "social-proof", "urgency"],

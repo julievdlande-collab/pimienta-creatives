@@ -40,6 +40,7 @@ export default function CreatePage() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [results, setResults] = useState<(string | null)[]>([]);
+  const [imageUrls, setImageUrls] = useState<({ id: string; url: string } | null)[]>([]);
   const [error, setError] = useState("");
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +67,7 @@ export default function CreatePage() {
     setLoading(true);
     setError("");
     setResults([]);
+    setImageUrls([]);
     setProgress("Generating 3 ad variants with Nano Banana Pro...");
 
     try {
@@ -91,6 +93,7 @@ export default function CreatePage() {
       }
 
       setResults(data.images || []);
+      setImageUrls(data.imageUrls || []);
       setProgress("");
     } catch {
       setError("Network error. Please try again.");
@@ -104,6 +107,31 @@ export default function CreatePage() {
     link.href = `data:image/png;base64,${base64}`;
     link.download = `${productName.replace(/\s+/g, "-").toLowerCase()}-variant-${index + 1}.png`;
     link.click();
+  };
+
+  const handleEditInCanva = async (index: number) => {
+    const entry = imageUrls[index];
+    if (!entry) return;
+
+    try {
+      const res = await fetch("/api/canva/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: entry.url,
+          title: `${productName} - ${["Benefit", "Social Proof", "Urgency"][index]}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.editUrl) {
+        window.open(data.editUrl, "_blank");
+      }
+    } catch {
+      // Fallback: open Canva with image URL
+      window.open(`https://www.canva.com/design/new`, "_blank");
+    }
   };
 
   return (
@@ -299,7 +327,13 @@ export default function CreatePage() {
                             {["Benefit", "Social Proof", "Urgency"][i]}
                           </span>
                         </div>
-                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEditInCanva(i)}
+                            className="px-4 py-2 rounded-lg bg-[#7d2ae8]/90 backdrop-blur-sm text-xs font-semibold text-white shadow-sm hover:bg-[#7d2ae8] transition-colors"
+                          >
+                            Edit in Canva
+                          </button>
                           <button
                             onClick={() => handleDownload(img, i)}
                             className="px-4 py-2 rounded-lg bg-white/90 backdrop-blur-sm text-xs font-semibold shadow-sm hover:bg-white transition-colors"
